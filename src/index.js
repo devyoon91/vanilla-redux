@@ -1,17 +1,76 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import {createStore} from "redux";
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+const ul = document.querySelector("ul");
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+const ADD_TODO = "ADD_TODO";
+const DELETE_TODO = "DELETE_TODO";
+
+const addToDo = (text) => {
+  return {
+    type: ADD_TODO,
+    text
+  }
+};
+
+const deleteToDo = id => {
+  return {
+    type: DELETE_TODO,
+    id
+  }
+}
+
+const reducer = (state = [], action) => { 
+  switch (action.type) {
+    case ADD_TODO :
+      // only create object state, not mutate the state object
+      const newToDoObj =  {text: action.text, id: Date.now()};
+      return [newToDoObj, ...state];
+    case DELETE_TODO :
+      const removeObj = state.filter(toDo => toDo.id !== action.id);
+      return removeObj;
+    default : 
+      return state;
+  }
+};
+
+const store = createStore(reducer);
+
+store.subscribe( () => console.log(store.getState()));
+
+const dispatchAddToDo = text => {
+  store.dispatch(addToDo(text));
+};
+
+const dispatchDeleteToDo = e => {
+  const id = parseInt(e.target.parentNode.id);
+  store.dispatch(deleteToDo(id));
+}
+
+const paintTodos = () => {
+  const toDos = store.getState();
+  ul.innerHTML = "";
+  toDos.forEach(toDo => {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.innerText = "DEL";
+    btn.addEventListener("click",dispatchDeleteToDo);
+    li.id = toDo.id;
+    li.innerText = toDo.text;
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+};
+
+store.subscribe(paintTodos);
+
+
+const onSubmit = e => {
+  e.preventDefault();
+  const toDo = input.value;
+  input.value = "";
+  dispatchAddToDo(toDo);
+};
+
+form.addEventListener("submit", onSubmit);
